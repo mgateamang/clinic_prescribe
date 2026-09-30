@@ -11,7 +11,7 @@ ApplicationWindow {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margin: 16
+        anchors.margins: 16
         spacing: 12
 
         // Header
