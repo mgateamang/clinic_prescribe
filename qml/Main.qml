@@ -5,8 +5,8 @@ import QtQuick.Layouts
 ApplicationWindow {
     id: root
     visible: true
-    width: 780
-    height: 640
+    width: 820
+    height: 660
     title: "AIDANS - Digital Prescription Module (Doctor / Nurse)"
 
     ColumnLayout {
@@ -15,10 +15,38 @@ ApplicationWindow {
         spacing: 12
 
         // Header
-        Label {
-            text: "Doctor e-Prescription Portal"
-            font.pixelSize: 20
-            font.bold: true
+        RowLayout {
+            Layout.fillWidth: true
+            Label {
+                text: "Doctor e-Prescription Portal"
+                font.pixelSize: 20
+                font.bold: true
+            }
+
+            Item { Layout.fillWidth: true }
+
+            Rectangle {
+                width: 10
+                height: 10
+                radius: 5
+                color: controller.isServerOnline ? "#16a34a" : "#dc2626"
+            }
+            Label {
+                text: controller.isServerOnline ? "Online" : "Offline"
+                font.pixelSize: 12
+                font.bold: true
+                color: controller.isServerOnline ? "#16a34a" : "#dc2626"
+            }
+
+            Button {
+                text: "⚙ Settings"
+                onClicked: settingsPopup.open()
+            }
+
+            Button {
+                text: "Refresh Data"
+                onClicked: controller.refreshData()
+            }
         }
 
         // Doctor & Patient info
@@ -40,11 +68,6 @@ ApplicationWindow {
                 placeholderText: "e.g. 1"
                 validator: IntValidator { bottom: 1 }
                 Layout.preferredWidth: 90
-            }
-
-            Button {
-                text: "Refresh Data"
-                onClicked: controller.refreshData()
             }
         }
 
@@ -188,6 +211,141 @@ ApplicationWindow {
                 text: controller.statusMessage.length > 0 ? controller.statusMessage : "Ready"
                 font.pixelSize: 12
                 color: "#1e293b"
+            }
+        }
+    }
+
+    // Settings Popup Dialog
+    Popup {
+        id: settingsPopup
+        anchors.centerIn: parent
+        width: 480
+        height: 280
+        modal: true
+        focus: true
+
+        contentItem: ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 16
+            spacing: 12
+
+            Label {
+                text: "Server Settings"
+                font.bold: true
+                font.pixelSize: 16
+            }
+
+            Label {
+                text: "Configure Clinic Server IP / URL (saved to config.ini):"
+                font.pixelSize: 12
+                color: "#64748b"
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+
+                TextField {
+                    id: serverUrlField
+                    text: controller.serverUrl
+                    Layout.fillWidth: true
+                }
+
+                Button {
+                    text: "Test"
+                    onClicked: controller.testConnection(serverUrlField.text)
+                }
+            }
+
+            Label {
+                text: controller.connectionStatus.length > 0 ? controller.connectionStatus : "Click Test to verify connection."
+                font.pixelSize: 11
+                color: controller.connectionStatus.includes("Connected") ? "#16a34a" : "#dc2626"
+            }
+
+            Item { Layout.fillHeight: true }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 12
+
+                Button {
+                    text: "Cancel"
+                    onClicked: settingsPopup.close()
+                }
+
+                Item { Layout.fillWidth: true }
+
+                Button {
+                    text: "Save & Apply"
+                    highlighted: true
+                    onClicked: {
+                        controller.saveServerUrl(serverUrlField.text);
+                        controller.refreshData();
+                        settingsPopup.close();
+                    }
+                }
+            }
+        }
+    }
+
+    // SERVER OFFLINE ERROR OVERLAY
+    Rectangle {
+        id: offlineOverlay
+        anchors.fill: parent
+        color: Qt.rgba(0, 0, 0, 0.6)
+        visible: !controller.isServerOnline
+        z: 999
+
+        Rectangle {
+            anchors.centerIn: parent
+            width: 460
+            height: 260
+            radius: 8
+            color: "#ffffff"
+            border.color: "#f87171"
+            border.width: 2
+
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 20
+                spacing: 12
+
+                Label {
+                    text: "⚠ Server Offline or Unreachable"
+                    font.bold: true
+                    font.pixelSize: 18
+                    color: "#dc2626"
+                    Layout.alignment: Qt.AlignHCenter
+                }
+
+                Label {
+                    text: "Cannot connect to clinic server at:\n" + controller.serverUrl
+                    horizontalAlignment: Text.AlignHCenter
+                    color: "#475569"
+                    font.pixelSize: 13
+                    Layout.alignment: Qt.AlignHCenter
+                }
+
+                Item { Layout.fillHeight: true }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 12
+
+                    Button {
+                        text: "⚙ Settings"
+                        Layout.fillWidth: true
+                        onClicked: settingsPopup.open()
+                    }
+
+                    Button {
+                        text: "🔄 Retry Connection"
+                        highlighted: true
+                        Layout.fillWidth: true
+                        onClicked: controller.refreshData()
+                    }
+                }
             }
         }
     }

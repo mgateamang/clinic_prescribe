@@ -1,4 +1,5 @@
 #include <QCoreApplication>
+#include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
@@ -9,11 +10,27 @@
 void runPrescribeTests() {
     std::cout << "[TEST] Running PrescribeController Unit Tests...\n";
 
+    QString testConfig = "test_prescribe_config.ini";
+    if (QFile::exists(testConfig)) QFile::remove(testConfig);
+
+    {
+        aidans::PrescribeController ctrlCfg(testConfig);
+        assert(ctrlCfg.serverUrl() == "http://localhost:8080/api/v1");
+        ctrlCfg.saveServerUrl("http://192.168.1.88:8080/api/v1");
+    }
+
+    {
+        aidans::PrescribeController ctrlReload(testConfig);
+        assert(ctrlReload.serverUrl() == "http://192.168.1.88:8080/api/v1");
+    }
+    if (QFile::exists(testConfig)) QFile::remove(testConfig);
+
     aidans::PrescribeController ctrl;
 
     // 1. Initial State
     assert(ctrl.cart().isEmpty());
     assert(!ctrl.isBusy());
+    assert(ctrl.isServerOnline());
 
     // 2. Reject Invalid Additions
     std::cout << "[TEST] Testing validation on invalid medication additions...\n";

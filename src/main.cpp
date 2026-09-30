@@ -8,9 +8,17 @@ int main(int argc, char* argv[]) {
     app.setApplicationName("AIDANS-Prescribe");
     app.setOrganizationName("ElizabethClinic");
 
-    aidans::PrescribeController controller;
+    QString configPath = "config.ini";
+    for (int i = 1; i < argc; ++i) {
+        QString arg = argv[i];
+        if (arg == "--config" && i + 1 < argc) {
+            configPath = argv[++i];
+        }
+    }
 
-    // Check optional CLI argument for custom server URL
+    aidans::PrescribeController controller(configPath);
+
+    // Check optional CLI argument for custom server URL override
     for (int i = 1; i < argc; ++i) {
         QString arg = argv[i];
         if (arg == "--server" && i + 1 < argc) {

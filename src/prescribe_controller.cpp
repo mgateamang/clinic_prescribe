@@ -1,4 +1,6 @@
 #include "prescribe_controller.hpp"
+#include <QSettings>
+#include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
@@ -7,12 +9,43 @@
 
 namespace aidans {
 
-PrescribeController::PrescribeController(QObject* parent)
-    : QObject(parent) {
+PrescribeController::PrescribeController(const QString& configPath, QObject* parent)
+    : QObject(parent), m_configPath(configPath) {
+    loadConfig();
+}
+
+void PrescribeController::loadConfig() {
+    if (QFileInfo::exists(m_configPath)) {
+        QSettings settings(m_configPath, QSettings::IniFormat);
+        settings.beginGroup("Server");
+        QString url = settings.value("url", m_serverUrl).toString();
+        settings.endGroup();
+        if (!url.isEmpty()) {
+            m_serverUrl = url;
+            emit serverUrlChanged();
+        }
+    }
+}
+
+void PrescribeController::saveServerUrl(const QString& url) {
+    QString trimmed = url.trimmed();
+    if (trimmed.isEmpty()) return;
+
+    m_serverUrl = trimmed;
+    emit serverUrlChanged();
+
+    QSettings settings(m_configPath, QSettings::IniFormat);
+    settings.beginGroup("Server");
+    settings.setValue("url", m_serverUrl);
+    settings.endGroup();
+    settings.sync();
+
+    setStatus("Server URL saved to " + m_configPath);
 }
 
 void PrescribeController::setServerUrl(const QString& url) {
     m_serverUrl = url;
+    emit serverUrlChanged();
 }
 
 void PrescribeController::setStatus(const QString& msg) {
@@ -27,6 +60,54 @@ void PrescribeController::setBusy(bool busy) {
         m_isBusy = busy;
         emit isBusyChanged();
     }
+}
+
+void PrescribeController::setServerOnline(bool online) {
+    if (m_isServerOnline != online) {
+        m_isServerOnline = online;
+        emit isServerOnlineChanged();
+    }
+}
+
+void PrescribeController::setConnectionStatus(const QString& status) {
+    if (m_connectionStatus != status) {
+        m_connectionStatus = status;
+        emit connectionStatusChanged();
+    }
+}
+
+void PrescribeController::testConnection(const QString& targetUrl) {
+    QString urlStr = targetUrl.trimmed();
+    if (urlStr.isEmpty()) urlStr = m_serverUrl;
+
+    setBusy(true);
+    setConnectionStatus("Pinging " + urlStr + "...");
+
+    QString healthUrl = urlStr;
+    if (!healthUrl.endsWith("/health") && !healthUrl.endsWith("/api/v1/health")) {
+        healthUrl = urlStr + "/health";
+    }
+
+    QUrl target(healthUrl);
+    QNetworkRequest req(target);
+    req.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
+
+    QNetworkReply* reply = m_netManager.get(req);
+    connect(reply, &QNetworkReply::finished, this, [this, reply, urlStr]() {
+        reply->deleteLater();
+        setBusy(false);
+
+        if (reply->error() == QNetworkReply::NoError) {
+            QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
+            QString service = doc.object().value("service").toString();
+            QString version = doc.object().value("version").toString();
+            setConnectionStatus(QString("Connected to %1 (%2 v%3)").arg(urlStr).arg(service).arg(version));
+            setServerOnline(true);
+        } else {
+            setConnectionStatus("Failed to connect: " + reply->errorString());
+            setServerOnline(false);
+        }
+    });
 }
 
 bool PrescribeController::addItem(int inventoryId, const QString& itemName, int quantity, const QString& dosage) {
@@ -97,7 +178,11 @@ void PrescribeController::refreshData() {
             if (doc.isArray()) {
                 m_doctors = doc.toVariant().toList();
                 emit doctorsChanged();
+                setServerOnline(true);
             }
+        } else {
+            setServerOnline(false);
+            setStatus("Could not connect to clinic server: " + docReply->errorString());
         }
     });
 
@@ -112,9 +197,11 @@ void PrescribeController::refreshData() {
             if (doc.isArray()) {
                 m_inventory = doc.toVariant().toList();
                 emit inventoryChanged();
+                setServerOnline(true);
                 setStatus("Clinic catalog refreshed successfully.");
             }
         } else {
+            setServerOnline(false);
             setStatus("Could not connect to server at " + m_serverUrl);
         }
     });
@@ -152,12 +239,18 @@ void PrescribeController::submitPrescription(int doctorId, int patientId, const 
             QJsonObject obj = doc.object();
             QString code = obj.value("prescription_code").toString();
             clearCart();
+            setServerOnline(true);
             setStatus(QString("Prescription transmitted successfully! Code: %1").arg(code));
             emit prescriptionCreated(code);
         } else {
             QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
             QString errStr = doc.object().value("error").toString();
             if (errStr.isEmpty()) errStr = reply->errorString();
+            if (reply->error() == QNetworkReply::ConnectionRefusedError ||
+                reply->error() == QNetworkReply::HostNotFoundError ||
+                reply->error() == QNetworkReply::TimeoutError) {
+                setServerOnline(false);
+            }
             setStatus("Submission failed: " + errStr);
         }
     });
