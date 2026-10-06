@@ -289,67 +289,6 @@ ApplicationWindow {
         }
     }
 
-    // SERVER OFFLINE ERROR OVERLAY
-    Rectangle {
-        id: offlineOverlay
-        anchors.fill: parent
-        color: Qt.rgba(0, 0, 0, 0.6)
-        visible: !controller.isServerOnline
-        z: 999
-
-        Rectangle {
-            anchors.centerIn: parent
-            width: 460
-            height: 260
-            radius: 8
-            color: "#ffffff"
-            border.color: "#f87171"
-            border.width: 2
-
-            ColumnLayout {
-                anchors.fill: parent
-                anchors.margins: 20
-                spacing: 12
-
-                Label {
-                    text: "⚠ Server Offline or Unreachable"
-                    font.bold: true
-                    font.pixelSize: 18
-                    color: "#dc2626"
-                    Layout.alignment: Qt.AlignHCenter
-                }
-
-                Label {
-                    text: "Cannot connect to clinic server at:\n" + controller.serverUrl
-                    horizontalAlignment: Text.AlignHCenter
-                    color: "#475569"
-                    font.pixelSize: 13
-                    Layout.alignment: Qt.AlignHCenter
-                }
-
-                Item { Layout.fillHeight: true }
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 12
-
-                    Button {
-                        text: "⚙ Settings"
-                        Layout.fillWidth: true
-                        onClicked: settingsPopup.open()
-                    }
-
-                    Button {
-                        text: "🔄 Retry Connection"
-                        highlighted: true
-                        Layout.fillWidth: true
-                        onClicked: controller.refreshData()
-                    }
-                }
-            }
-        }
-    }
-
     Component.onCompleted: {
         controller.refreshData();
     }
