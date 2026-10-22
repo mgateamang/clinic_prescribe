@@ -1,105 +1,105 @@
-#include <QCoreApplication>
-#include <QFile>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonArray>
-#include <iostream>
-#include <cassert>
-#include "prescribe_controller.hpp"
+#include <QCoreApplication> // Include QCoreApplication for declarations and types
+#include <QFile> // Include QFile for declarations and types
+#include <QJsonDocument> // Include QJsonDocument for declarations and types
+#include <QJsonObject> // Include QJsonObject for declarations and types
+#include <QJsonArray> // Include QJsonArray for declarations and types
+#include <iostream> // Include iostream for declarations and types
+#include <cassert> // Include cassert for declarations and types
+#include "prescribe_controller.hpp" // Include prescribe_controller.hpp for declarations and types
 
-void runPrescribeTests() {
-    std::cout << "[TEST] Running PrescribeController Unit Tests...\n";
+void runPrescribeTests() { // Execute clinical workflow step
+    std::cout << "[TEST] Running PrescribeController Unit Tests...\n"; // Print diagnostic informational message to standard output
 
-    QString testConfig = "test_prescribe_config.ini";
-    if (QFile::exists(testConfig)) QFile::remove(testConfig);
+    QString testConfig = "test_prescribe_config.ini"; // Assign value to target variable
+    if (QFile::exists(testConfig)) QFile::remove(testConfig); // Evaluate conditional expression to branch execution flow
 
-    {
-        aidans::PrescribeController ctrlCfg(testConfig);
+    { // Scope delimiter
+        aidans::PrescribeController ctrlCfg(testConfig); // Execute clinical workflow step
         assert(ctrlCfg.serverUrl() == "http://localhost:8080/api/v1");
         ctrlCfg.saveServerUrl("http://192.168.1.88:8080/api/v1");
-    }
+    } // Close active scope block
 
-    {
-        aidans::PrescribeController ctrlReload(testConfig);
+    { // Scope delimiter
+        aidans::PrescribeController ctrlReload(testConfig); // Execute clinical workflow step
         assert(ctrlReload.serverUrl() == "http://192.168.1.88:8080/api/v1");
-    }
-    if (QFile::exists(testConfig)) QFile::remove(testConfig);
+    } // Close active scope block
+    if (QFile::exists(testConfig)) QFile::remove(testConfig); // Evaluate conditional expression to branch execution flow
 
-    aidans::PrescribeController ctrl;
+    aidans::PrescribeController ctrl; // Execute clinical workflow step
 
     // 1. Initial State
-    assert(ctrl.cart().isEmpty());
-    assert(!ctrl.isBusy());
-    assert(ctrl.isServerOnline());
+    assert(ctrl.cart().isEmpty()); // Execute clinical workflow step
+    assert(!ctrl.isBusy()); // Execute clinical workflow step
+    assert(ctrl.isServerOnline()); // Execute clinical workflow step
 
     // 2. Reject Invalid Additions
-    std::cout << "[TEST] Testing validation on invalid medication additions...\n";
+    std::cout << "[TEST] Testing validation on invalid medication additions...\n"; // Print diagnostic informational message to standard output
     bool addedBad1 = ctrl.addItem(1, "Amoxicillin", 0, "1 tab"); // quantity <= 0
-    assert(!addedBad1);
-    assert(ctrl.cart().isEmpty());
+    assert(!addedBad1); // Execute clinical workflow step
+    assert(ctrl.cart().isEmpty()); // Execute clinical workflow step
 
     bool addedBad2 = ctrl.addItem(1, "Amoxicillin", 2, "   "); // empty dosage
-    assert(!addedBad2);
-    assert(ctrl.cart().isEmpty());
+    assert(!addedBad2); // Execute clinical workflow step
+    assert(ctrl.cart().isEmpty()); // Execute clinical workflow step
 
     bool addedBad3 = ctrl.addItem(0, "Amoxicillin", 2, "1 tab"); // id <= 0
-    assert(!addedBad3);
-    assert(ctrl.cart().isEmpty());
+    assert(!addedBad3); // Execute clinical workflow step
+    assert(ctrl.cart().isEmpty()); // Execute clinical workflow step
 
     // 3. Valid Additions
-    std::cout << "[TEST] Testing valid item additions...\n";
-    bool ok1 = ctrl.addItem(10, "Amoxicillin 500mg", 2, "1 cap every 8 hours");
-    assert(ok1);
-    assert(ctrl.cart().size() == 1);
+    std::cout << "[TEST] Testing valid item additions...\n"; // Print diagnostic informational message to standard output
+    bool ok1 = ctrl.addItem(10, "Amoxicillin 500mg", 2, "1 cap every 8 hours"); // Assign value to target variable
+    assert(ok1); // Execute clinical workflow step
+    assert(ctrl.cart().size() == 1); // Assign value to target variable
 
-    bool ok2 = ctrl.addItem(12, "Paracetamol 500mg", 1, "1 tab as needed for fever");
-    assert(ok2);
-    assert(ctrl.cart().size() == 2);
+    bool ok2 = ctrl.addItem(12, "Paracetamol 500mg", 1, "1 tab as needed for fever"); // Assign value to target variable
+    assert(ok2); // Execute clinical workflow step
+    assert(ctrl.cart().size() == 2); // Assign value to target variable
 
     // Verify properties of first item
-    QVariantMap first = ctrl.cart()[0].toMap();
-    assert(first["inventory_item_id"].toInt() == 10);
-    assert(first["quantity"].toInt() == 2);
-    assert(first["dosage_instructions"].toString() == "1 cap every 8 hours");
+    QVariantMap first = ctrl.cart()[0].toMap(); // Assign value to target variable
+    assert(first["inventory_item_id"].toInt() == 10); // Assign value to target variable
+    assert(first["quantity"].toInt() == 2); // Assign value to target variable
+    assert(first["dosage_instructions"].toString() == "1 cap every 8 hours"); // Assign value to target variable
 
     // 4. Payload Generation & OpenAPI Compliance
-    std::cout << "[TEST] Verifying OpenAPI-compliant JSON payload generation...\n";
-    QByteArray payload = ctrl.buildPrescriptionPayload(3, 42, "Take after meals");
-    QJsonDocument doc = QJsonDocument::fromJson(payload);
-    assert(!doc.isNull());
-    assert(doc.isObject());
+    std::cout << "[TEST] Verifying OpenAPI-compliant JSON payload generation...\n"; // Print diagnostic informational message to standard output
+    QByteArray payload = ctrl.buildPrescriptionPayload(3, 42, "Take after meals"); // Assign value to target variable
+    QJsonDocument doc = QJsonDocument::fromJson(payload); // Assign value to target variable
+    assert(!doc.isNull()); // Execute clinical workflow step
+    assert(doc.isObject()); // Execute clinical workflow step
 
-    QJsonObject root = doc.object();
-    assert(root["doctor_id"].toInt() == 3);
-    assert(root["patient_id"].toInt() == 42);
-    assert(root["notes"].toString() == "Take after meals");
-    assert(root["items"].isArray());
+    QJsonObject root = doc.object(); // Assign value to target variable
+    assert(root["doctor_id"].toInt() == 3); // Assign value to target variable
+    assert(root["patient_id"].toInt() == 42); // Assign value to target variable
+    assert(root["notes"].toString() == "Take after meals"); // Assign value to target variable
+    assert(root["items"].isArray()); // Execute clinical workflow step
 
-    QJsonArray items = root["items"].toArray();
-    assert(items.size() == 2);
+    QJsonArray items = root["items"].toArray(); // Assign value to target variable
+    assert(items.size() == 2); // Assign value to target variable
 
-    QJsonObject item0 = items[0].toObject();
-    assert(item0["inventory_item_id"].toInt() == 10);
-    assert(item0["quantity"].toInt() == 2);
-    assert(item0["dosage_instructions"].toString() == "1 cap every 8 hours");
+    QJsonObject item0 = items[0].toObject(); // Assign value to target variable
+    assert(item0["inventory_item_id"].toInt() == 10); // Assign value to target variable
+    assert(item0["quantity"].toInt() == 2); // Assign value to target variable
+    assert(item0["dosage_instructions"].toString() == "1 cap every 8 hours"); // Assign value to target variable
 
     // 5. Item Removal
-    std::cout << "[TEST] Testing item removal from cart...\n";
-    ctrl.removeItem(0);
-    assert(ctrl.cart().size() == 1);
-    QVariantMap remaining = ctrl.cart()[0].toMap();
-    assert(remaining["inventory_item_id"].toInt() == 12);
+    std::cout << "[TEST] Testing item removal from cart...\n"; // Print diagnostic informational message to standard output
+    ctrl.removeItem(0); // Execute clinical workflow step
+    assert(ctrl.cart().size() == 1); // Assign value to target variable
+    QVariantMap remaining = ctrl.cart()[0].toMap(); // Assign value to target variable
+    assert(remaining["inventory_item_id"].toInt() == 12); // Assign value to target variable
 
     // 6. Clear Cart
-    std::cout << "[TEST] Testing clearing cart...\n";
-    ctrl.clearCart();
-    assert(ctrl.cart().isEmpty());
+    std::cout << "[TEST] Testing clearing cart...\n"; // Print diagnostic informational message to standard output
+    ctrl.clearCart(); // Execute clinical workflow step
+    assert(ctrl.cart().isEmpty()); // Execute clinical workflow step
 
-    std::cout << "\n>>> ALL CLINIC_PRESCRIBE TESTS PASSED SUCCESSFULLY! <<<\n\n";
-}
+    std::cout << "\n>>> ALL CLINIC_PRESCRIBE TESTS PASSED SUCCESSFULLY! <<<\n\n"; // Print diagnostic informational message to standard output
+} // Close active scope block
 
-int main(int argc, char* argv[]) {
-    QCoreApplication app(argc, argv);
-    runPrescribeTests();
-    return 0;
-}
+int main(int argc, char* argv[]) { // Execute clinical workflow step
+    QCoreApplication app(argc, argv); // Execute clinical workflow step
+    runPrescribeTests(); // Execute clinical workflow step
+    return 0; // Return computed result to caller
+} // Close active scope block

@@ -1,147 +1,83 @@
-#pragma once
+#pragma once // Ensure header is included only once per translation unit
+
+#include <QObject> // Include base Qt object class
+#include <QString> // Include Qt Unicode string class
+#include <QVariantList> // Include Qt variant list collection
+#include <QVariantMap> // Include Qt variant map dictionary
+#include <QNetworkAccessManager> // Include Qt network access coordinator
+#include <QNetworkReply> // Include Qt network reply handler
+
+namespace aidans { // Enclosing clinical suite namespace
 
 /**
- * @file prescribe_controller.hpp
- * @brief ViewModel Controller for AIDANS Doctor e-Prescription Client.
- *
- * Exposes a reactive Qt C++ interface to declarative QML UI views.
- * Responsibilities:
- *  - Loads active doctors and medical formulary inventory via REST API.
- *  - Manages the in-progress prescription item cart (medicines, quantities, dosages).
- *  - Serializes prescription requests into compliant JSON payloads.
- *  - Submits digital prescriptions (`POST /api/v1/prescriptions`) and handles RX code generation.
- *  - Provides health diagnostics and local configuration persistence (config.ini).
+ * @class PrescribeController
+ * @brief ViewModel controller for physician e-prescription authoring and submission.
  */
+class PrescribeController : public QObject { // Inherit QObject for meta-object system
+    Q_OBJECT // Macro enabling signals, slots, and properties
 
-#include <QObject>
-#include <QString>
-#include <QVariantList>
-#include <QVariantMap>
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
+    Q_PROPERTY(QVariantList doctors READ doctors NOTIFY doctorsChanged) // Expose doctor roster to QML
+    Q_PROPERTY(QVariantList inventory READ inventory NOTIFY inventoryChanged) // Expose formulary inventory items
+    Q_PROPERTY(QVariantList cart READ cart NOTIFY cartChanged) // Expose in-progress prescription medication items
+    Q_PROPERTY(QString statusMessage READ statusMessage NOTIFY statusMessageChanged) // Expose user status message
+    Q_PROPERTY(bool isBusy READ isBusy NOTIFY isBusyChanged) // Expose network busy state flag
+    Q_PROPERTY(bool isServerOnline READ isServerOnline NOTIFY isServerOnlineChanged) // Expose server connectivity flag
+    Q_PROPERTY(QString serverUrl READ serverUrl NOTIFY serverUrlChanged) // Expose active REST API server URL
+    Q_PROPERTY(QString connectionStatus READ connectionStatus NOTIFY connectionStatusChanged) // Expose diagnostic text
 
-namespace aidans {
+public: // Public interface methods
+    explicit PrescribeController(const QString& configPath = "config.ini", QObject* parent = nullptr); // Constructor
+    ~PrescribeController() override = default; // Destructor
 
-class PrescribeController : public QObject {
-    Q_OBJECT
+    QVariantList doctors() const { return m_doctors; } // Getter for doctor roster
+    QVariantList inventory() const { return m_inventory; } // Getter for medical formulary items
+    QVariantList cart() const { return m_cart; } // Getter for current prescription medications
+    QString statusMessage() const { return m_statusMessage; } // Getter for status message text
+    bool isBusy() const { return m_isBusy; } // Getter for network busy flag
+    bool isServerOnline() const { return m_isServerOnline; } // Getter for server availability flag
+    QString serverUrl() const { return m_serverUrl; } // Getter for active backend server URL
+    QString connectionStatus() const { return m_connectionStatus; } // Getter for diagnostic connection text
 
-    // Reactive properties bound directly to QML UI components
-    Q_PROPERTY(QVariantList doctors READ doctors NOTIFY doctorsChanged)
-    Q_PROPERTY(QVariantList inventory READ inventory NOTIFY inventoryChanged)
-    Q_PROPERTY(QVariantList cart READ cart NOTIFY cartChanged)
-    Q_PROPERTY(QString statusMessage READ statusMessage NOTIFY statusMessageChanged)
-    Q_PROPERTY(bool isBusy READ isBusy NOTIFY isBusyChanged)
-    Q_PROPERTY(bool isServerOnline READ isServerOnline NOTIFY isServerOnlineChanged)
-    Q_PROPERTY(QString serverUrl READ serverUrl NOTIFY serverUrlChanged)
-    Q_PROPERTY(QString connectionStatus READ connectionStatus NOTIFY connectionStatusChanged)
+    Q_INVOKABLE void loadConfig(); // Load INI configuration from disk
+    Q_INVOKABLE void saveServerUrl(const QString& url); // Persist updated server URL
+    Q_INVOKABLE void testConnection(const QString& targetUrl); // Test server connectivity asynchronously
+    Q_INVOKABLE void setServerUrl(const QString& url); // Set server URL dynamically
+    Q_INVOKABLE void refreshData(); // Refresh doctor directory and inventory items
+    Q_INVOKABLE bool addItem(int inventoryId, const QString& itemName, int quantity, const QString& dosage); // Add medication
+    Q_INVOKABLE void removeItem(int index); // Remove medication line by index
+    Q_INVOKABLE void clearCart(); // Clear all medication lines from draft
+    Q_INVOKABLE void submitPrescription(int doctorId, int patientId, const QString& notes); // Submit digital prescription
 
-public:
-    /**
-     * @brief Constructs controller, loads INI settings, and checks backend health.
-     * @param configPath Local config.ini path.
-     * @param parent Qt parent object hierarchy pointer.
-     */
-    explicit PrescribeController(const QString& configPath = "config.ini", QObject* parent = nullptr);
-    ~PrescribeController() override = default;
+    // Helper for payload generation (used both in network submit and tests)
+    QByteArray buildPrescriptionPayload(int doctorId, int patientId, const QString& notes) const; // Build JSON prescription payload
 
-    // Property Getters
-    QVariantList doctors() const { return m_doctors; }
-    QVariantList inventory() const { return m_inventory; }
-    QVariantList cart() const { return m_cart; }
-    QString statusMessage() const { return m_statusMessage; }
-    bool isBusy() const { return m_isBusy; }
-    bool isServerOnline() const { return m_isServerOnline; }
-    QString serverUrl() const { return m_serverUrl; }
-    QString connectionStatus() const { return m_connectionStatus; }
+signals: // Qt notification signals
+    void doctorsChanged(); // Emitted when doctor roster updates
+    void inventoryChanged(); // Emitted when formulary inventory updates
+    void cartChanged(); // Emitted when prescription line items update
+    void statusMessageChanged(); // Emitted when status message updates
+    void isBusyChanged(); // Emitted when busy state toggles
+    void isServerOnlineChanged(); // Emitted when server connectivity changes
+    void serverUrlChanged(); // Emitted when server URL changes
+    void connectionStatusChanged(); // Emitted when connection diagnostic text updates
+    void prescriptionCreated(const QString& prescriptionCode); // Emitted when prescription is successfully created
 
-    /**
-     * @brief Reads server URL from config.ini.
-     */
-    Q_INVOKABLE void loadConfig();
+private: // Private member state and helpers
+    QString m_configPath{"config.ini"}; // Path to configuration file
+    QString m_serverUrl{"http://localhost:8080/api/v1"}; // Active REST API server URL
+    QString m_connectionStatus; // Detailed connection diagnostic text
+    bool m_isServerOnline{true}; // Server availability status flag
+    QVariantList m_doctors; // Cached list of doctors
+    QVariantList m_inventory; // Cached list of formulary inventory items
+    QVariantList m_cart; // Active prescription line items
+    QString m_statusMessage; // Active status message text
+    bool m_isBusy{false}; // Busy network flag
+    QNetworkAccessManager m_netManager; // Network manager instance
 
-    /**
-     * @brief Persists server URL to config.ini.
-     */
-    Q_INVOKABLE void saveServerUrl(const QString& url);
-
-    /**
-     * @brief Probes a candidate server URL to verify reachability.
-     */
-    Q_INVOKABLE void testConnection(const QString& targetUrl);
-
-    /**
-     * @brief Dynamically updates active server base URL.
-     */
-    Q_INVOKABLE void setServerUrl(const QString& url);
-
-    /**
-     * @brief Refreshes doctor directory and medical inventory from backend.
-     */
-    Q_INVOKABLE void refreshData();
-
-    /**
-     * @brief Adds a prescribed medication line to the draft prescription.
-     * @param inventoryId Inventory item ID.
-     * @param itemName Name of medication.
-     * @param quantity Number of units prescribed.
-     * @param dosage Clinical dosage directions (e.g. "Take 1 pill bid after food").
-     * @return true if added successfully.
-     */
-    Q_INVOKABLE bool addItem(int inventoryId, const QString& itemName, int quantity, const QString& dosage);
-
-    /**
-     * @brief Removes a medication line item from the draft prescription.
-     * @param index Zero-based item index.
-     */
-    Q_INVOKABLE void removeItem(int index);
-
-    /**
-     * @brief Clears all medication items from the current draft.
-     */
-    Q_INVOKABLE void clearCart();
-
-    /**
-     * @brief Submits the completed prescription to the backend server.
-     * @param doctorId Prescribing physician ID.
-     * @param patientId Patient record ID.
-     * @param notes Clinical notes and diagnosis summary.
-     */
-    Q_INVOKABLE void submitPrescription(int doctorId, int patientId, const QString& notes);
-
-    /**
-     * @brief Helper to serialize prescription payload to JSON byte array (used in network & tests).
-     */
-    QByteArray buildPrescriptionPayload(int doctorId, int patientId, const QString& notes) const;
-
-signals:
-    void doctorsChanged();
-    void inventoryChanged();
-    void cartChanged();
-    void statusMessageChanged();
-    void isBusyChanged();
-    void isServerOnlineChanged();
-    void serverUrlChanged();
-    void connectionStatusChanged();
-    void prescriptionCreated(const QString& prescriptionCode);
-    void errorOccurred(const QString& errorMsg);
-
-private:
-    QString m_configPath{"config.ini"};
-    QString m_serverUrl{"http://localhost:8080"};
-
-    QVariantList m_doctors;
-    QVariantList m_inventory;
-    QVariantList m_cart;
-    QString m_statusMessage{"Ready"};
-    bool m_isBusy{false};
-    bool m_isServerOnline{false};
-    QString m_connectionStatus{"Checking..."};
-
-    QNetworkAccessManager* m_netManager{nullptr};
-
-    void checkServerHealth();
-    void fetchDoctors();
-    void fetchInventory();
-};
+    void setStatus(const QString& msg); // Set status message helper
+    void setBusy(bool busy); // Set busy state helper
+    void setServerOnline(bool online); // Set server availability helper
+    void setConnectionStatus(const QString& status); // Set diagnostic connection text helper
+}; // End of PrescribeController class definition
 
 } // namespace aidans

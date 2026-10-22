@@ -1,295 +1,295 @@
-import QtQuick
-import QtQuick.Controls
-import QtQuick.Layouts
+import QtQuick // Import module dependency for runtime execution
+import QtQuick.Controls // Import module dependency for runtime execution
+import QtQuick.Layouts // Import module dependency for runtime execution
 
-ApplicationWindow {
-    id: root
-    visible: true
-    width: 820
-    height: 660
-    title: "AIDANS - Digital Prescription Module (Doctor / Nurse)"
+ApplicationWindow { // Execute clinical workflow step
+    id: root // Execute clinical workflow step
+    visible: true // Execute clinical workflow step
+    width: 820 // Execute clinical workflow step
+    height: 660 // Execute clinical workflow step
+    title: "AIDANS - Digital Prescription Module (Doctor / Nurse)" // Execute clinical workflow step
 
-    ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: 16
-        spacing: 12
+    ColumnLayout { // Execute clinical workflow step
+        anchors.fill: parent // Execute clinical workflow step
+        anchors.margins: 16 // Execute clinical workflow step
+        spacing: 12 // Execute clinical workflow step
 
         // Header
-        RowLayout {
-            Layout.fillWidth: true
-            Label {
-                text: "Doctor e-Prescription Portal"
-                font.pixelSize: 20
-                font.bold: true
-            }
+        RowLayout { // Execute clinical workflow step
+            Layout.fillWidth: true // Execute clinical workflow step
+            Label { // Execute clinical workflow step
+                text: "Doctor e-Prescription Portal" // Execute clinical workflow step
+                font.pixelSize: 20 // Execute clinical workflow step
+                font.bold: true // Execute clinical workflow step
+            } // Close active scope block
 
-            Item { Layout.fillWidth: true }
+            Item { Layout.fillWidth: true } // Execute clinical workflow step
 
-            Rectangle {
-                width: 10
-                height: 10
-                radius: 5
-                color: controller.isServerOnline ? "#16a34a" : "#dc2626"
-            }
-            Label {
-                text: controller.isServerOnline ? "Online" : "Offline"
-                font.pixelSize: 12
-                font.bold: true
-                color: controller.isServerOnline ? "#16a34a" : "#dc2626"
-            }
+            Rectangle { // Execute clinical workflow step
+                width: 10 // Execute clinical workflow step
+                height: 10 // Execute clinical workflow step
+                radius: 5 // Execute clinical workflow step
+                color: controller.isServerOnline ? "#16a34a" : "#dc2626" // Execute clinical workflow step
+            } // Close active scope block
+            Label { // Execute clinical workflow step
+                text: controller.isServerOnline ? "Online" : "Offline" // Execute clinical workflow step
+                font.pixelSize: 12 // Execute clinical workflow step
+                font.bold: true // Execute clinical workflow step
+                color: controller.isServerOnline ? "#16a34a" : "#dc2626" // Execute clinical workflow step
+            } // Close active scope block
 
-            Button {
-                text: "⚙ Settings"
-                onClicked: settingsPopup.open()
-            }
+            Button { // Execute clinical workflow step
+                text: "⚙ Settings" // Execute clinical workflow step
+                onClicked: settingsPopup.open() // Execute clinical workflow step
+            } // Close active scope block
 
-            Button {
-                text: "Refresh Data"
-                onClicked: controller.refreshData()
-            }
-        }
+            Button { // Execute clinical workflow step
+                text: "Refresh Data" // Execute clinical workflow step
+                onClicked: controller.refreshData() // Execute clinical workflow step
+            } // Close active scope block
+        } // Close active scope block
 
         // Doctor & Patient info
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 12
+        RowLayout { // Execute clinical workflow step
+            Layout.fillWidth: true // Execute clinical workflow step
+            spacing: 12 // Execute clinical workflow step
 
-            Label { text: "Doctor:" }
-            ComboBox {
-                id: doctorCombo
-                Layout.fillWidth: true
-                model: controller.doctors
-                textRole: "name"
-            }
+            Label { text: "Doctor:" } // Execute clinical workflow step
+            ComboBox { // Execute clinical workflow step
+                id: doctorCombo // Execute clinical workflow step
+                Layout.fillWidth: true // Execute clinical workflow step
+                model: controller.doctors // Execute clinical workflow step
+                textRole: "name" // Execute clinical workflow step
+            } // Close active scope block
 
-            Label { text: "Patient ID:" }
-            TextField {
-                id: patientIdInput
-                placeholderText: "e.g. 1"
-                validator: IntValidator { bottom: 1 }
-                Layout.preferredWidth: 90
-            }
-        }
+            Label { text: "Patient ID:" } // Execute clinical workflow step
+            TextField { // Execute clinical workflow step
+                id: patientIdInput // Execute clinical workflow step
+                placeholderText: "e.g. 1" // Execute clinical workflow step
+                validator: IntValidator { bottom: 1 } // Execute clinical workflow step
+                Layout.preferredWidth: 90 // Execute clinical workflow step
+            } // Close active scope block
+        } // Close active scope block
 
-        TextField {
-            id: notesInput
-            Layout.fillWidth: true
-            placeholderText: "Clinical consultation notes / instructions..."
-        }
+        TextField { // Execute clinical workflow step
+            id: notesInput // Execute clinical workflow step
+            Layout.fillWidth: true // Execute clinical workflow step
+            placeholderText: "Clinical consultation notes / instructions..." // Execute clinical workflow step
+        } // Close active scope block
 
         // Add medication box
-        GroupBox {
-            title: "Add Medication from Inventory"
-            Layout.fillWidth: true
+        GroupBox { // Execute clinical workflow step
+            title: "Add Medication from Inventory" // Execute clinical workflow step
+            Layout.fillWidth: true // Execute clinical workflow step
 
-            RowLayout {
-                anchors.fill: parent
-                spacing: 8
+            RowLayout { // Execute clinical workflow step
+                anchors.fill: parent // Execute clinical workflow step
+                spacing: 8 // Execute clinical workflow step
 
-                ComboBox {
-                    id: medCombo
-                    Layout.fillWidth: true
-                    model: controller.inventory
-                    textRole: "name"
-                }
+                ComboBox { // Execute clinical workflow step
+                    id: medCombo // Execute clinical workflow step
+                    Layout.fillWidth: true // Execute clinical workflow step
+                    model: controller.inventory // Execute clinical workflow step
+                    textRole: "name" // Execute clinical workflow step
+                } // Close active scope block
 
-                Label { text: "Qty:" }
-                SpinBox {
-                    id: qtySpin
-                    from: 1
-                    to: 50
-                    value: 1
-                    Layout.preferredWidth: 90
-                }
+                Label { text: "Qty:" } // Execute clinical workflow step
+                SpinBox { // Execute clinical workflow step
+                    id: qtySpin // Execute clinical workflow step
+                    from: 1 // Execute clinical workflow step
+                    to: 50 // Execute clinical workflow step
+                    value: 1 // Execute clinical workflow step
+                    Layout.preferredWidth: 90 // Execute clinical workflow step
+                } // Close active scope block
 
-                TextField {
-                    id: dosageInput
-                    placeholderText: "Dosage (e.g. 1 tab 3x daily)"
-                    Layout.preferredWidth: 200
-                }
+                TextField { // Execute clinical workflow step
+                    id: dosageInput // Execute clinical workflow step
+                    placeholderText: "Dosage (e.g. 1 tab 3x daily)" // Execute clinical workflow step
+                    Layout.preferredWidth: 200 // Execute clinical workflow step
+                } // Close active scope block
 
-                Button {
-                    text: "+ Add"
-                    highlighted: true
-                    onClicked: {
-                        if (medCombo.currentIndex >= 0 && dosageInput.text.trim().length > 0) {
-                            var item = controller.inventory[medCombo.currentIndex];
-                            controller.addItem(item.id, item.name, qtySpin.value, dosageInput.text);
-                            dosageInput.text = "";
-                            qtySpin.value = 1;
-                        }
-                    }
-                }
-            }
-        }
+                Button { // Execute clinical workflow step
+                    text: "+ Add" // Execute clinical workflow step
+                    highlighted: true // Execute clinical workflow step
+                    onClicked: { // Execute clinical workflow step
+                        if (medCombo.currentIndex >= 0 && dosageInput.text.trim().length > 0) { // Evaluate conditional expression to branch execution flow
+                            var item = controller.inventory[medCombo.currentIndex]; // Assign value to target variable
+                            controller.addItem(item.id, item.name, qtySpin.value, dosageInput.text); // Execute clinical workflow step
+                            dosageInput.text = ""; // Assign value to target variable
+                            qtySpin.value = 1; // Assign value to target variable
+                        } // Close active scope block
+                    } // Close active scope block
+                } // Close active scope block
+            } // Close active scope block
+        } // Close active scope block
 
         // Items list
-        Label {
-            text: "Prescription Items (" + controller.cart.length + "):"
-            font.bold: true
-        }
+        Label { // Execute clinical workflow step
+            text: "Prescription Items (" + controller.cart.length + "):" // Execute clinical workflow step
+            font.bold: true // Execute clinical workflow step
+        } // Close active scope block
 
-        ListView {
-            id: cartList
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            clip: true
-            model: controller.cart
-            delegate: Rectangle {
-                width: cartList.width
-                height: 44
-                color: index % 2 === 0 ? "#f8fafc" : "#ffffff"
-                border.color: "#e2e8f0"
-                radius: 4
+        ListView { // Execute clinical workflow step
+            id: cartList // Execute clinical workflow step
+            Layout.fillWidth: true // Execute clinical workflow step
+            Layout.fillHeight: true // Execute clinical workflow step
+            clip: true // Execute clinical workflow step
+            model: controller.cart // Execute clinical workflow step
+            delegate: Rectangle { // Execute clinical workflow step
+                width: cartList.width // Execute clinical workflow step
+                height: 44 // Execute clinical workflow step
+                color: index % 2 === 0 ? "#f8fafc" : "#ffffff" // Assign value to target variable
+                border.color: "#e2e8f0" // Execute clinical workflow step
+                radius: 4 // Execute clinical workflow step
 
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.margins: 8
-                    spacing: 12
+                RowLayout { // Execute clinical workflow step
+                    anchors.fill: parent // Execute clinical workflow step
+                    anchors.margins: 8 // Execute clinical workflow step
+                    spacing: 12 // Execute clinical workflow step
 
-                    Label {
-                        text: modelData.item_name
-                        font.bold: true
-                        Layout.preferredWidth: 220
-                        elide: Text.ElideRight
-                    }
+                    Label { // Execute clinical workflow step
+                        text: modelData.item_name // Execute clinical workflow step
+                        font.bold: true // Execute clinical workflow step
+                        Layout.preferredWidth: 220 // Execute clinical workflow step
+                        elide: Text.ElideRight // Execute clinical workflow step
+                    } // Close active scope block
 
-                    Label {
-                        text: "Qty: " + modelData.quantity
-                        Layout.preferredWidth: 60
-                    }
+                    Label { // Execute clinical workflow step
+                        text: "Qty: " + modelData.quantity // Execute clinical workflow step
+                        Layout.preferredWidth: 60 // Execute clinical workflow step
+                    } // Close active scope block
 
-                    Label {
-                        text: modelData.dosage_instructions
-                        Layout.fillWidth: true
-                        color: "#475569"
-                        elide: Text.ElideRight
-                    }
+                    Label { // Execute clinical workflow step
+                        text: modelData.dosage_instructions // Execute clinical workflow step
+                        Layout.fillWidth: true // Execute clinical workflow step
+                        color: "#475569" // Execute clinical workflow step
+                        elide: Text.ElideRight // Execute clinical workflow step
+                    } // Close active scope block
 
-                    Button {
-                        text: "Remove"
-                        onClicked: controller.removeItem(index)
-                    }
-                }
-            }
-        }
+                    Button { // Execute clinical workflow step
+                        text: "Remove" // Execute clinical workflow step
+                        onClicked: controller.removeItem(index) // Execute clinical workflow step
+                    } // Close active scope block
+                } // Close active scope block
+            } // Close active scope block
+        } // Close active scope block
 
         // Action row
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 12
+        RowLayout { // Execute clinical workflow step
+            Layout.fillWidth: true // Execute clinical workflow step
+            spacing: 12 // Execute clinical workflow step
 
-            Button {
-                text: "Clear"
-                onClicked: controller.clearCart()
-            }
+            Button { // Execute clinical workflow step
+                text: "Clear" // Execute clinical workflow step
+                onClicked: controller.clearCart() // Execute clinical workflow step
+            } // Close active scope block
 
-            Item { Layout.fillWidth: true }
+            Item { Layout.fillWidth: true } // Execute clinical workflow step
 
-            Button {
-                text: "Transmit Prescription to Pharmacy"
-                highlighted: true
-                enabled: !controller.isBusy && controller.cart.length > 0 && patientIdInput.text.length > 0
-                onClicked: {
-                    var docId = doctorCombo.currentIndex >= 0 ? controller.doctors[doctorCombo.currentIndex].id : 1;
-                    var patId = parseInt(patientIdInput.text, 10);
-                    controller.submitPrescription(docId, patId, notesInput.text);
-                }
-            }
-        }
+            Button { // Execute clinical workflow step
+                text: "Transmit Prescription to Pharmacy" // Execute clinical workflow step
+                highlighted: true // Execute clinical workflow step
+                enabled: !controller.isBusy && controller.cart.length > 0 && patientIdInput.text.length > 0 // Execute clinical workflow step
+                onClicked: { // Execute clinical workflow step
+                    var docId = doctorCombo.currentIndex >= 0 ? controller.doctors[doctorCombo.currentIndex].id : 1; // Assign value to target variable
+                    var patId = parseInt(patientIdInput.text, 10); // Assign value to target variable
+                    controller.submitPrescription(docId, patId, notesInput.text); // Execute clinical workflow step
+                } // Close active scope block
+            } // Close active scope block
+        } // Close active scope block
 
         // Status bar
-        Rectangle {
-            Layout.fillWidth: true
-            height: 32
-            color: "#f1f5f9"
-            border.color: "#cbd5e1"
-            radius: 4
+        Rectangle { // Execute clinical workflow step
+            Layout.fillWidth: true // Execute clinical workflow step
+            height: 32 // Execute clinical workflow step
+            color: "#f1f5f9" // Execute clinical workflow step
+            border.color: "#cbd5e1" // Execute clinical workflow step
+            radius: 4 // Execute clinical workflow step
 
-            Label {
-                anchors.centerIn: parent
-                text: controller.statusMessage.length > 0 ? controller.statusMessage : "Ready"
-                font.pixelSize: 12
-                color: "#1e293b"
-            }
-        }
-    }
+            Label { // Execute clinical workflow step
+                anchors.centerIn: parent // Execute clinical workflow step
+                text: controller.statusMessage.length > 0 ? controller.statusMessage : "Ready" // Execute clinical workflow step
+                font.pixelSize: 12 // Execute clinical workflow step
+                color: "#1e293b" // Execute clinical workflow step
+            } // Close active scope block
+        } // Close active scope block
+    } // Close active scope block
 
     // Settings Popup Dialog
-    Popup {
-        id: settingsPopup
-        anchors.centerIn: parent
-        width: 480
-        height: 280
-        modal: true
-        focus: true
+    Popup { // Execute clinical workflow step
+        id: settingsPopup // Execute clinical workflow step
+        anchors.centerIn: parent // Execute clinical workflow step
+        width: 480 // Execute clinical workflow step
+        height: 280 // Execute clinical workflow step
+        modal: true // Execute clinical workflow step
+        focus: true // Execute clinical workflow step
 
-        contentItem: ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: 16
-            spacing: 12
+        contentItem: ColumnLayout { // Execute clinical workflow step
+            anchors.fill: parent // Execute clinical workflow step
+            anchors.margins: 16 // Execute clinical workflow step
+            spacing: 12 // Execute clinical workflow step
 
-            Label {
-                text: "Server Settings"
-                font.bold: true
-                font.pixelSize: 16
-            }
+            Label { // Execute clinical workflow step
+                text: "Server Settings" // Execute clinical workflow step
+                font.bold: true // Execute clinical workflow step
+                font.pixelSize: 16 // Execute clinical workflow step
+            } // Close active scope block
 
-            Label {
-                text: "Configure Clinic Server IP / URL (saved to config.ini):"
-                font.pixelSize: 12
-                color: "#64748b"
-            }
+            Label { // Execute clinical workflow step
+                text: "Configure Clinic Server IP / URL (saved to config.ini):" // Execute clinical workflow step
+                font.pixelSize: 12 // Execute clinical workflow step
+                color: "#64748b" // Execute clinical workflow step
+            } // Close active scope block
 
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 8
+            RowLayout { // Execute clinical workflow step
+                Layout.fillWidth: true // Execute clinical workflow step
+                spacing: 8 // Execute clinical workflow step
 
-                TextField {
-                    id: serverUrlField
-                    text: controller.serverUrl
-                    Layout.fillWidth: true
-                }
+                TextField { // Execute clinical workflow step
+                    id: serverUrlField // Execute clinical workflow step
+                    text: controller.serverUrl // Execute clinical workflow step
+                    Layout.fillWidth: true // Execute clinical workflow step
+                } // Close active scope block
 
-                Button {
-                    text: "Test"
-                    onClicked: controller.testConnection(serverUrlField.text)
-                }
-            }
+                Button { // Execute clinical workflow step
+                    text: "Test" // Execute clinical workflow step
+                    onClicked: controller.testConnection(serverUrlField.text) // Execute clinical workflow step
+                } // Close active scope block
+            } // Close active scope block
 
-            Label {
-                text: controller.connectionStatus.length > 0 ? controller.connectionStatus : "Click Test to verify connection."
-                font.pixelSize: 11
-                color: controller.connectionStatus.includes("Connected") ? "#16a34a" : "#dc2626"
-            }
+            Label { // Execute clinical workflow step
+                text: controller.connectionStatus.length > 0 ? controller.connectionStatus : "Click Test to verify connection." // Execute clinical workflow step
+                font.pixelSize: 11 // Execute clinical workflow step
+                color: controller.connectionStatus.includes("Connected") ? "#16a34a" : "#dc2626" // Execute clinical workflow step
+            } // Close active scope block
 
-            Item { Layout.fillHeight: true }
+            Item { Layout.fillHeight: true } // Execute clinical workflow step
 
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 12
+            RowLayout { // Execute clinical workflow step
+                Layout.fillWidth: true // Execute clinical workflow step
+                spacing: 12 // Execute clinical workflow step
 
-                Button {
-                    text: "Cancel"
-                    onClicked: settingsPopup.close()
-                }
+                Button { // Execute clinical workflow step
+                    text: "Cancel" // Execute clinical workflow step
+                    onClicked: settingsPopup.close() // Execute clinical workflow step
+                } // Close active scope block
 
-                Item { Layout.fillWidth: true }
+                Item { Layout.fillWidth: true } // Execute clinical workflow step
 
-                Button {
-                    text: "Save & Apply"
-                    highlighted: true
-                    onClicked: {
-                        controller.saveServerUrl(serverUrlField.text);
-                        controller.refreshData();
-                        settingsPopup.close();
-                    }
-                }
-            }
-        }
-    }
+                Button { // Execute clinical workflow step
+                    text: "Save & Apply" // Execute clinical workflow step
+                    highlighted: true // Execute clinical workflow step
+                    onClicked: { // Execute clinical workflow step
+                        controller.saveServerUrl(serverUrlField.text); // Execute clinical workflow step
+                        controller.refreshData(); // Execute clinical workflow step
+                        settingsPopup.close(); // Execute clinical workflow step
+                    } // Close active scope block
+                } // Close active scope block
+            } // Close active scope block
+        } // Close active scope block
+    } // Close active scope block
 
-    Component.onCompleted: {
-        controller.refreshData();
-    }
-}
+    Component.onCompleted: { // Execute clinical workflow step
+        controller.refreshData(); // Execute clinical workflow step
+    } // Close active scope block
+} // Close active scope block
