@@ -1,3 +1,11 @@
+/**
+ * @file prescribe_controller.cpp
+ * @brief Implementation of PrescribeController for Qt6 / QML e-Prescription client.
+ *
+ * Implements physician doctor lists, inventory lookup, dynamic prescription assembly,
+ * JSON serialization, and submission to /api/v1/prescriptions.
+ */
+
 #include "prescribe_controller.hpp"
 #include <QSettings>
 #include <QFileInfo>
@@ -9,6 +17,9 @@
 
 namespace aidans {
 
+/**
+ * @brief Constructs the controller and reads local config.ini.
+ */
 PrescribeController::PrescribeController(const QString& configPath, QObject* parent)
     : QObject(parent), m_configPath(configPath) {
     loadConfig();
