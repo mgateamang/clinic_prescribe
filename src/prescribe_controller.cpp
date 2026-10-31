@@ -187,8 +187,11 @@ void PrescribeController::refreshData() { // Execute clinical workflow step
         if (docReply->error() == QNetworkReply::NoError) { // Evaluate conditional expression to branch execution flow
             QJsonDocument doc = QJsonDocument::fromJson(docReply->readAll()); // Assign value to target variable
             if (doc.isArray()) { // Evaluate conditional expression to branch execution flow
-                m_doctors = doc.toVariant().toList(); // Assign value to target variable
-                emit doctorsChanged(); // Notify QML UI bindings of underlying property state update
+                QVariantList docs = doc.toVariant().toList();
+                if (m_doctors != docs) {
+                    m_doctors = docs; // Assign value to target variable
+                    emit doctorsChanged(); // Notify QML UI bindings of underlying property state update
+                }
                 setServerOnline(true); // Execute clinical workflow step
             } // Close active scope block
         } else { // Execute default fallback branch
@@ -206,8 +209,11 @@ void PrescribeController::refreshData() { // Execute clinical workflow step
         if (invReply->error() == QNetworkReply::NoError) { // Evaluate conditional expression to branch execution flow
             QJsonDocument doc = QJsonDocument::fromJson(invReply->readAll()); // Assign value to target variable
             if (doc.isArray()) { // Evaluate conditional expression to branch execution flow
-                m_inventory = doc.toVariant().toList(); // Assign value to target variable
-                emit inventoryChanged(); // Notify QML UI bindings of underlying property state update
+                QVariantList inv = doc.toVariant().toList();
+                if (m_inventory != inv) {
+                    m_inventory = inv; // Assign value to target variable
+                    emit inventoryChanged(); // Notify QML UI bindings of underlying property state update
+                }
                 setServerOnline(true); // Execute clinical workflow step
                 setStatus("Clinic catalog refreshed successfully."); // Execute clinical workflow step
             } // Close active scope block
@@ -233,8 +239,10 @@ void PrescribeController::refreshData() { // Execute clinical workflow step
                         active.append(v);
                     }
                 }
-                m_appointments = active;
-                emit appointmentsChanged();
+                if (m_appointments != active) {
+                    m_appointments = active;
+                    emit appointmentsChanged();
+                }
             }
         }
     });
