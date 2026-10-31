@@ -216,7 +216,131 @@ void PrescribeController::refreshData() { // Execute clinical workflow step
             setStatus("Could not connect to server at " + m_serverUrl); // Execute clinical workflow step
         } // Close active scope block
     }); // Execute clinical workflow step
+
+    // 3. Fetch Online Portal Appointments
+    QNetworkRequest apptReq(QUrl(m_serverUrl + "/appointments"));
+    QNetworkReply* apptReply = m_netManager.get(apptReq);
+    connect(apptReply, &QNetworkReply::finished, this, [this, apptReply]() {
+        apptReply->deleteLater();
+        if (apptReply->error() == QNetworkReply::NoError) {
+            QJsonDocument doc = QJsonDocument::fromJson(apptReply->readAll());
+            if (doc.isArray()) {
+                QVariantList raw = doc.toVariant().toList();
+                QVariantList active;
+                for (const auto& v : raw) {
+                    QString st = v.toMap().value("status").toString();
+                    if (st != "COMPLETED" && st != "CANCELLED") {
+                        active.append(v);
+                    }
+                }
+                m_appointments = active;
+                emit appointmentsChanged();
+            }
+        }
+    });
 } // Close active scope block
+
+void PrescribeController::setAppointments(const QVariantList& list) {
+    m_appointments = list;
+    emit appointmentsChanged();
+}
+
+bool PrescribeController::selectAppointment(int index) {
+    if (index < 0 || index >= m_appointments.size()) {
+        setStatus("Error: Invalid appointment selection.");
+        return false;
+    }
+    m_selectedAppointment = m_appointments[index].toMap();
+    emit selectedAppointmentChanged();
+
+    int docId = m_selectedAppointment.value("doctor_id").toInt();
+    int patId = m_selectedAppointment.value("patient_id").toInt();
+    QString patName = m_selectedAppointment.value("patient_name").toString();
+    QString reason = m_selectedAppointment.value("reason").toString();
+
+    setStatus(QString("Selected patient %1 (ID #%2) from portal submission.").arg(patName).arg(patId));
+    emit appointmentSelected(docId, patId, patName, reason);
+    return true;
+}
+
+bool PrescribeController::resolveAppointment(int index) {
+    if (index < 0 || index >= m_appointments.size()) {
+        setStatus("Error: Invalid appointment to resolve.");
+        return false;
+    }
+    QVariantMap appt = m_appointments[index].toMap();
+    int apptId = appt.value("id").toInt();
+    QString patName = appt.value("patient_name").toString();
+
+    m_appointments.removeAt(index);
+    emit appointmentsChanged();
+
+    if (m_selectedAppointment.value("id").toInt() == apptId) {
+        m_selectedAppointment.clear();
+        emit selectedAppointmentChanged();
+    }
+
+    setStatus(QString("Resolved and dismissed concern for %1.").arg(patName));
+
+    if (apptId > 0) {
+        QNetworkRequest req(QUrl(QString("%1/appointments/%2/resolve").arg(m_serverUrl).arg(apptId)));
+        req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        QNetworkReply* reply = m_netManager.post(req, QByteArray("{}"));
+        connect(reply, &QNetworkReply::finished, this, [reply]() {
+            reply->deleteLater();
+        });
+    }
+    return true;
+}
+
+QString PrescribeController::formatPrescriptionReceipt(const QString& rxCode, const QString& doctorName, int doctorId,
+                                                       const QString& patientName, int patientId, const QString& notes,
+                                                       const QVariantList& items) {
+    QString out;
+    out += "================================================\n";
+    out += "       AIDANS DIGITAL PRESCRIPTION RECEIPT      \n";
+    out += "================================================\n";
+    out += QString("RX CODE    : %1\n").arg(rxCode.isEmpty() ? "DRAFT (UNTRANSMITTED)" : rxCode);
+    out += QString("DOCTOR     : %1 (ID #%2)\n").arg(doctorName.isEmpty() ? "Physician" : doctorName).arg(doctorId);
+    out += QString("PATIENT    : %1 (ID #%2)\n").arg(patientName.isEmpty() ? "Patient" : patientName).arg(patientId);
+    if (!notes.trimmed().isEmpty()) {
+        out += QString("NOTES      : %1\n").arg(notes.trimmed());
+    }
+    out += "------------------------------------------------\n";
+    out += "PRESCRIBED MEDICATIONS:\n";
+    int idx = 1;
+    for (const auto& itVar : items) {
+        QVariantMap it = itVar.toMap();
+        out += QString("  %1. %2 (Qty: %3)\n     Dosage: %4\n")
+                   .arg(idx++)
+                   .arg(it.value("item_name").toString())
+                   .arg(it.value("quantity").toInt())
+                   .arg(it.value("dosage_instructions").toString());
+    }
+    out += "================================================\n";
+    return out;
+}
+
+QString PrescribeController::renderReceipt(const QString& rxCode, int doctorId, int patientId, const QString& notes) {
+    if (m_cart.isEmpty() && !m_lastReceiptText.isEmpty() && (rxCode.isEmpty() || rxCode == m_lastPrescriptionCode)) {
+        return m_lastReceiptText;
+    }
+    QString docName;
+    for (const auto& d : m_doctors) {
+        if (d.toMap().value("id").toInt() == doctorId) {
+            docName = d.toMap().value("name").toString();
+            break;
+        }
+    }
+    QString patName = m_selectedAppointment.value("patient_id").toInt() == patientId
+                          ? m_selectedAppointment.value("patient_name").toString()
+                          : QString();
+    QString codeToUse = rxCode.isEmpty() ? m_lastPrescriptionCode : rxCode;
+    m_lastPrescriptionCode = codeToUse;
+    m_lastReceiptText = formatPrescriptionReceipt(codeToUse, docName, doctorId, patName, patientId, notes, m_cart);
+    emit lastPrescriptionChanged();
+    return m_lastReceiptText;
+}
 
 void PrescribeController::submitPrescription(int doctorId, int patientId, const QString& notes) { // Execute clinical workflow step
     if (doctorId <= 0) { // Evaluate conditional expression to branch execution flow
@@ -235,13 +359,14 @@ void PrescribeController::submitPrescription(int doctorId, int patientId, const 
     setBusy(true); // Execute clinical workflow step
     setStatus("Transmitting digital prescription to clinic server..."); // Execute clinical workflow step
 
+    QVariantList snapshotItems = m_cart;
     QByteArray payload = buildPrescriptionPayload(doctorId, patientId, notes); // Assign value to target variable
 
     QNetworkRequest req(QUrl(m_serverUrl + "/prescriptions")); // Construct HTTP request specification with target URL and headers
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json"); // Construct HTTP request specification with target URL and headers
 
     QNetworkReply* reply = m_netManager.post(req, payload); // Assign value to target variable
-    connect(reply, &QNetworkReply::finished, this, [this, reply]() { // Connect Qt signal to asynchronous member slot handler
+    connect(reply, &QNetworkReply::finished, this, [this, reply, doctorId, patientId, notes, snapshotItems]() { // Connect Qt signal to asynchronous member slot handler
         reply->deleteLater(); // Schedule network reply object for safe asynchronous deletion
         setBusy(false); // Execute clinical workflow step
 
@@ -249,6 +374,11 @@ void PrescribeController::submitPrescription(int doctorId, int patientId, const 
             QJsonDocument doc = QJsonDocument::fromJson(reply->readAll()); // Read incoming response byte stream into buffer
             QJsonObject obj = doc.object(); // Assign value to target variable
             QString code = obj.value("prescription_code").toString(); // Assign value to target variable
+            QString docName = obj.value("doctor_name").toString();
+            QString patName = obj.value("patient_name").toString();
+            m_lastPrescriptionCode = code;
+            m_lastReceiptText = formatPrescriptionReceipt(code, docName, doctorId, patName, patientId, notes, snapshotItems);
+            emit lastPrescriptionChanged();
             clearCart(); // Execute clinical workflow step
             setServerOnline(true); // Execute clinical workflow step
             setStatus(QString("Prescription transmitted successfully! Code: %1").arg(code)); // Execute clinical workflow step

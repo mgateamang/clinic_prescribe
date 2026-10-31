@@ -49,6 +49,96 @@ ApplicationWindow { // Execute clinical workflow step
             } // Close active scope block
         } // Close active scope block
 
+        // Online Portal Patient Submissions
+        GroupBox {
+            title: "Online Patient Submissions (" + controller.appointments.length + ")"
+            Layout.fillWidth: true
+
+            ColumnLayout {
+                anchors.fill: parent
+                spacing: 6
+
+                ListView {
+                    id: apptList
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 110
+                    clip: true
+                    model: controller.appointments
+                    delegate: Rectangle {
+                        width: apptList.width
+                        height: 52
+                        color: controller.selectedAppointment.id === modelData.id ? "#e0f2fe" : (index % 2 === 0 ? "#f8fafc" : "#ffffff")
+                        border.color: controller.selectedAppointment.id === modelData.id ? "#0284c7" : "#e2e8f0"
+                        radius: 4
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.margins: 6
+                            spacing: 10
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 2
+
+                                Label {
+                                    text: modelData.patient_name + " (Patient ID #" + modelData.patient_id + ") • " + (modelData.patient_phone || "") + (modelData.patient_email ? " • " + modelData.patient_email : "")
+                                    font.bold: true
+                                    font.pixelSize: 12
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                }
+
+                                Label {
+                                    text: modelData.appointment_time + " with " + modelData.doctor_name + " — Reason: " + (modelData.reason && modelData.reason.length > 0 ? modelData.reason : "No reason specified")
+                                    font.pixelSize: 11
+                                    color: "#475569"
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                }
+                            }
+
+                            Button {
+                                text: "Select to Prescribe"
+                                highlighted: controller.selectedAppointment.id === modelData.id
+                                onClicked: {
+                                    controller.selectAppointment(index);
+                                    patientIdInput.text = modelData.patient_id.toString();
+                                    for (var i = 0; i < controller.doctors.length; ++i) {
+                                        if (controller.doctors[i].id === modelData.doctor_id) {
+                                            doctorCombo.currentIndex = i;
+                                            break;
+                                        }
+                                    }
+                                    if (modelData.reason && modelData.reason.length > 0 && notesInput.text.trim().length === 0) {
+                                        notesInput.text = "Chief complaint: " + modelData.reason;
+                                    }
+                                }
+                            }
+
+                            Button {
+                                text: "Resolved"
+                                onClicked: controller.resolveAppointment(index)
+                            }
+                        }
+                    }
+                }
+
+                Label {
+                    visible: controller.selectedAppointment.patient_id !== undefined
+                    text: controller.selectedAppointment.patient_id !== undefined
+                          ? ("Selected: " + controller.selectedAppointment.patient_name +
+                             " | Phone: " + (controller.selectedAppointment.patient_phone || "N/A") +
+                             " | Email: " + (controller.selectedAppointment.patient_email || "N/A") +
+                             " | Reason: " + (controller.selectedAppointment.reason || "N/A"))
+                          : ""
+                    font.pixelSize: 11
+                    color: "#0369a1"
+                    elide: Text.ElideRight
+                    Layout.fillWidth: true
+                }
+            }
+        }
+
         // Doctor & Patient info
         RowLayout { // Execute clinical workflow step
             Layout.fillWidth: true // Execute clinical workflow step
@@ -186,6 +276,19 @@ ApplicationWindow { // Execute clinical workflow step
 
             Item { Layout.fillWidth: true } // Execute clinical workflow step
 
+            Button {
+                text: "Print Receipt"
+                enabled: controller.lastReceiptText.length > 0 || controller.cart.length > 0
+                onClicked: {
+                    if (controller.cart.length > 0) {
+                        var docId = doctorCombo.currentIndex >= 0 ? controller.doctors[doctorCombo.currentIndex].id : 1;
+                        var patId = parseInt(patientIdInput.text, 10) || 0;
+                        controller.renderReceipt("", docId, patId, notesInput.text);
+                    }
+                    receiptPopup.open();
+                }
+            }
+
             Button { // Execute clinical workflow step
                 text: "Transmit Prescription to Pharmacy" // Execute clinical workflow step
                 highlighted: true // Execute clinical workflow step
@@ -288,6 +391,99 @@ ApplicationWindow { // Execute clinical workflow step
             } // Close active scope block
         } // Close active scope block
     } // Close active scope block
+
+    // Prescription Receipt Popup Dialog
+    Popup {
+        id: receiptPopup
+        anchors.centerIn: parent
+        width: 520
+        height: 420
+        modal: true
+        focus: true
+
+        contentItem: ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 16
+            spacing: 10
+
+            Label {
+                text: "Prescription Receipt"
+                font.bold: true
+                font.pixelSize: 16
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+
+                Label {
+                    text: "RX Code:"
+                    font.bold: true
+                }
+
+                TextField {
+                    id: rxCodeCopyField
+                    text: controller.lastPrescriptionCode.length > 0 ? controller.lastPrescriptionCode : "DRAFT"
+                    readOnly: true
+                    selectByMouse: true
+                    font.bold: true
+                    Layout.fillWidth: true
+                }
+
+                Button {
+                    text: "Copy RX Code"
+                    onClicked: {
+                        rxCodeCopyField.selectAll();
+                        rxCodeCopyField.copy();
+                    }
+                }
+            }
+
+            ScrollView {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                TextArea {
+                    id: receiptTextArea
+                    text: controller.lastReceiptText
+                    readOnly: true
+                    selectByMouse: true
+                    selectByKeyboard: true
+                    font.family: "monospace"
+                    font.pixelSize: 12
+                    wrapMode: TextEdit.Wrap
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 12
+
+                Button {
+                    text: "Copy Full Receipt"
+                    onClicked: {
+                        receiptTextArea.selectAll();
+                        receiptTextArea.copy();
+                    }
+                }
+
+                Item { Layout.fillWidth: true }
+
+                Button {
+                    text: "Close"
+                    highlighted: true
+                    onClicked: receiptPopup.close()
+                }
+            }
+        }
+    }
+
+    Connections {
+        target: controller
+        function onPrescriptionCreated(code) {
+            receiptPopup.open();
+        }
+    }
 
     Component.onCompleted: { // Execute clinical workflow step
         controller.refreshData(); // Execute clinical workflow step

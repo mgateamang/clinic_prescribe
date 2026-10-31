@@ -18,7 +18,11 @@ class PrescribeController : public QObject { // Inherit QObject for meta-object 
 
     Q_PROPERTY(QVariantList doctors READ doctors NOTIFY doctorsChanged) // Expose doctor roster to QML
     Q_PROPERTY(QVariantList inventory READ inventory NOTIFY inventoryChanged) // Expose formulary inventory items
+    Q_PROPERTY(QVariantList appointments READ appointments NOTIFY appointmentsChanged) // Expose online portal appointments
+    Q_PROPERTY(QVariantMap selectedAppointment READ selectedAppointment NOTIFY selectedAppointmentChanged) // Expose selected appointment details
     Q_PROPERTY(QVariantList cart READ cart NOTIFY cartChanged) // Expose in-progress prescription medication items
+    Q_PROPERTY(QString lastPrescriptionCode READ lastPrescriptionCode NOTIFY lastPrescriptionChanged) // Expose last RX code
+    Q_PROPERTY(QString lastReceiptText READ lastReceiptText NOTIFY lastPrescriptionChanged) // Expose rendered prescription receipt text
     Q_PROPERTY(QString statusMessage READ statusMessage NOTIFY statusMessageChanged) // Expose user status message
     Q_PROPERTY(bool isBusy READ isBusy NOTIFY isBusyChanged) // Expose network busy state flag
     Q_PROPERTY(bool isServerOnline READ isServerOnline NOTIFY isServerOnlineChanged) // Expose server connectivity flag
@@ -31,7 +35,11 @@ public: // Public interface methods
 
     QVariantList doctors() const { return m_doctors; } // Getter for doctor roster
     QVariantList inventory() const { return m_inventory; } // Getter for medical formulary items
+    QVariantList appointments() const { return m_appointments; } // Getter for portal appointments
+    QVariantMap selectedAppointment() const { return m_selectedAppointment; } // Getter for selected appointment
     QVariantList cart() const { return m_cart; } // Getter for current prescription medications
+    QString lastPrescriptionCode() const { return m_lastPrescriptionCode; } // Getter for last RX code
+    QString lastReceiptText() const { return m_lastReceiptText; } // Getter for rendered prescription receipt
     QString statusMessage() const { return m_statusMessage; } // Getter for status message text
     bool isBusy() const { return m_isBusy; } // Getter for network busy flag
     bool isServerOnline() const { return m_isServerOnline; } // Getter for server availability flag
@@ -43,18 +51,27 @@ public: // Public interface methods
     Q_INVOKABLE void testConnection(const QString& targetUrl); // Test server connectivity asynchronously
     Q_INVOKABLE void setServerUrl(const QString& url); // Set server URL dynamically
     Q_INVOKABLE void refreshData(); // Refresh doctor directory and inventory items
+    Q_INVOKABLE bool selectAppointment(int index); // Select patient appointment from portal submissions
+    Q_INVOKABLE bool resolveAppointment(int index); // Dismiss / mark patient concern as resolved
+    void setAppointments(const QVariantList& list); // Set appointments list directly
     Q_INVOKABLE bool addItem(int inventoryId, const QString& itemName, int quantity, const QString& dosage); // Add medication
     Q_INVOKABLE void removeItem(int index); // Remove medication line by index
     Q_INVOKABLE void clearCart(); // Clear all medication lines from draft
     Q_INVOKABLE void submitPrescription(int doctorId, int patientId, const QString& notes); // Submit digital prescription
+    Q_INVOKABLE QString renderReceipt(const QString& rxCode, int doctorId, int patientId, const QString& notes); // Render selectable receipt text
 
     // Helper for payload generation (used both in network submit and tests)
     QByteArray buildPrescriptionPayload(int doctorId, int patientId, const QString& notes) const; // Build JSON prescription payload
+    static QString formatPrescriptionReceipt(const QString& rxCode, const QString& doctorName, int doctorId, const QString& patientName, int patientId, const QString& notes, const QVariantList& items);
 
 signals: // Qt notification signals
     void doctorsChanged(); // Emitted when doctor roster updates
     void inventoryChanged(); // Emitted when formulary inventory updates
+    void appointmentsChanged(); // Emitted when portal appointments update
+    void selectedAppointmentChanged(); // Emitted when a portal appointment is selected
+    void appointmentSelected(int doctorId, int patientId, const QString& patientName, const QString& reason);
     void cartChanged(); // Emitted when prescription line items update
+    void lastPrescriptionChanged(); // Emitted when receipt or RX code updates
     void statusMessageChanged(); // Emitted when status message updates
     void isBusyChanged(); // Emitted when busy state toggles
     void isServerOnlineChanged(); // Emitted when server connectivity changes
@@ -69,7 +86,11 @@ private: // Private member state and helpers
     bool m_isServerOnline{true}; // Server availability status flag
     QVariantList m_doctors; // Cached list of doctors
     QVariantList m_inventory; // Cached list of formulary inventory items
+    QVariantList m_appointments; // Cached list of portal appointments
+    QVariantMap m_selectedAppointment; // Currently selected portal appointment
     QVariantList m_cart; // Active prescription line items
+    QString m_lastPrescriptionCode; // Most recently generated RX code
+    QString m_lastReceiptText; // Most recently rendered prescription receipt text
     QString m_statusMessage; // Active status message text
     bool m_isBusy{false}; // Busy network flag
     QNetworkAccessManager m_netManager; // Network manager instance

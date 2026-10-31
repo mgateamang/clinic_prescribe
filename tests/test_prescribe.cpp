@@ -95,6 +95,48 @@ void runPrescribeTests() { // Execute clinical workflow step
     ctrl.clearCart(); // Execute clinical workflow step
     assert(ctrl.cart().isEmpty()); // Execute clinical workflow step
 
+    // 7. Online Patient Appointment Selection
+    std::cout << "[TEST] Testing online portal appointment selection...\n";
+    QVariantList mockAppts;
+    QVariantMap appt1;
+    appt1["id"] = 7;
+    appt1["patient_id"] = 42;
+    appt1["doctor_id"] = 2;
+    appt1["patient_name"] = "Erika Musterfrau";
+    appt1["patient_phone"] = "+49-171-9876543";
+    appt1["patient_email"] = "erika@example.de";
+    appt1["appointment_time"] = "2026-10-31 10:30:00";
+    appt1["doctor_name"] = "Dr. Klaus Schneider";
+    appt1["reason"] = "Persistent cough and fever";
+    mockAppts.append(appt1);
+
+    ctrl.setAppointments(mockAppts);
+    assert(ctrl.appointments().size() == 1);
+    assert(!ctrl.selectAppointment(-1));
+    assert(!ctrl.selectAppointment(5));
+    assert(ctrl.selectAppointment(0));
+    assert(ctrl.selectedAppointment()["patient_id"].toInt() == 42);
+    assert(ctrl.selectedAppointment()["patient_name"].toString() == "Erika Musterfrau");
+    assert(ctrl.selectedAppointment()["patient_email"].toString() == "erika@example.de");
+    assert(ctrl.selectedAppointment()["reason"].toString() == "Persistent cough and fever");
+
+    // 8. Prescription Receipt Rendering (Selectable RX Code & Details)
+    std::cout << "[TEST] Testing prescription receipt rendering...\n";
+    ctrl.addItem(10, "Amoxicillin 500mg", 2, "1 cap every 8 hours");
+    QString receiptText = ctrl.renderReceipt("RX-998877-1234", 2, 42, "Persistent cough and fever");
+    assert(ctrl.lastPrescriptionCode() == "RX-998877-1234");
+    assert(receiptText.contains("RX-998877-1234"));
+    assert(receiptText.contains("Erika Musterfrau"));
+    assert(receiptText.contains("Amoxicillin 500mg"));
+    assert(receiptText.contains("1 cap every 8 hours"));
+
+    // 9. Dismiss / Resolve Patient Concern
+    std::cout << "[TEST] Testing resolving/dismissing patient concern...\n";
+    assert(!ctrl.resolveAppointment(-1));
+    assert(ctrl.resolveAppointment(0));
+    assert(ctrl.appointments().isEmpty());
+    assert(ctrl.selectedAppointment().isEmpty());
+
     std::cout << "\n>>> ALL CLINIC_PRESCRIBE TESTS PASSED SUCCESSFULLY! <<<\n\n"; // Print diagnostic informational message to standard output
 } // Close active scope block
 
